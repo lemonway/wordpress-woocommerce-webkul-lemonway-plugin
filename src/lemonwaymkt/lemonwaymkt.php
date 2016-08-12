@@ -336,7 +336,7 @@ final class Lemonwaymkt {
      	if( function_exists( 'is_plugin_active' ) ) {
      		
      		if ( !is_plugin_active( 'lemonway/lemonway.php' ) ) {
-     			add_action('admin_notices', array( &$this, 'alert_lw_not_actvie' ) );
+     			add_action('admin_notices', array( &$this, 'alert_lw_not_active' ) );
      			return false;
      		}
      	}
@@ -349,7 +349,7 @@ final class Lemonwaymkt {
       *
       * @access static
       */
-     static function alert_lw_not_actvie() {
+     static function alert_lw_not_active() {
      	echo '<div id="message" class="error"><p>';
      	echo sprintf( __('Sorry, <strong>%s</strong> requires Lemonway to be installed and activated first. Please install Lemonway plugin first.', LEMONWAYMKT_TEXT_DOMAIN), LEMONWAYMKT_NAME );
      	echo '</p></div>';
