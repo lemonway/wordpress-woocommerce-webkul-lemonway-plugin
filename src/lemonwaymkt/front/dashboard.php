@@ -10,13 +10,18 @@ function dashboard(){
 	$ibans = array();
 	$_walletDetails = new stdClass();
 	$walletManager = new WC_Lemonwaymkt_Wallet();
+	$moneyoutManager = new WC_Lemonwaymkt_Moneyout();
 
 	$current_user=wp_get_current_user();
 	$_wallet = $walletManager->getWalletByUser($current_user->ID);
+	$moneyouts = array();
 	if($_wallet){
 		$hasWallet = true;
 		$_walletDetails = $walletManager->getWalletDetails($_wallet->id_lw_wallet);
 		$ibans = $_walletDetails->ibans;
+		
+		$moneyouts = $moneyoutManager->getMoneyouts($current_user->ID);
+ 		
 	}
 
 	
@@ -36,7 +41,7 @@ padding:10px;
             		</div>
 		            <div class="">
 		            	<?php if($hasWallet):?>
-		                     <table cellspacing="0" style="width:100%">
+		                     <table cellspacing="0" class="shop_table shop_table_responsive" >
 				            <tr>
 				                <td ><label ><?php echo __('Wallet ID',LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
 				                <td >
@@ -88,7 +93,7 @@ padding:10px;
 					     </div>
 			            <div class="box-content">
 							<?php if(count($ibans) > 0) :?>
-		                		<table cellspacing="0" class="data-table"  id="ibans_table" style="width:100%">
+		                		<table cellspacing="0" class="shop_table shop_table_responsive" id="ibans_table">
 		                			<col width="1"  />
 								    <col width="1"  />
 								    <col  />
@@ -119,6 +124,39 @@ padding:10px;
 					    </div>
 					</div>
 				<?php endif;?>
+				
+				<?php if($hasWallet && $_walletDetails->BAL > 0):?>
+				  <div class="box">
+				        <div class="box-title">
+				            <h2><?php echo __('Money out',LEMONWAYMKT_TEXT_DOMAIN) ?></h2>
+				        </div>
+				        <?php if(is_array($moneyouts) && count($moneyouts)):?>
+				        	<p style="margin: 10px;font-size:18px"><?php echo __('Your ten last money out',LEMONWAYMKT_TEXT_DOMAIN)?></p>
+				        	<table cellspacing="0" class="shop_table shop_table_responsive" id="moneyout_table">
+								<thead>
+									<tr>
+										<th><?php echo __('Amount',LEMONWAYMKT_TEXT_DOMAIN)?></th>
+										<th><?php echo __('New balance',LEMONWAYMKT_TEXT_DOMAIN)?></th>
+										<th><?php echo __('Date',LEMONWAYMKT_TEXT_DOMAIN)?></th>
+									</tr>
+								</thead>
+								<tbody>
+								<?php foreach ($moneyouts as $mo):?>
+									<tr class="">
+										<td><?php echo wc_price($mo->amount_to_pay)?></td>
+										<td><?php echo wc_price($mo->new_bal)?></td>
+										<td><?php echo date( 'Y-m-d', strtotime( $mo->date_add ) ) ?></td>
+									</tr>
+								<?php endforeach;?>
+								</tbody>
+							</table>
+				        <?php else:?>
+				        	<p class="a-center" style="margin:10px 0"><?php echo __("You don't have any Money out!",LEMONWAYMKT_TEXT_DOMAIN)?></p>
+				        <?php endif;?>
+				        <a  href="<?php echo get_permalink().'?page=lemonway-do-moneyout' ?>" class="button" title="<?php echo __('Do a money out',LEMONWAYMKT_TEXT_DOMAIN) ?>"><span><span><?php echo __('Do a money out',LEMONWAYMKT_TEXT_DOMAIN) ?></span></span></a>
+
+				  </div>
+				  <?php endif;?>
         		</div><!-- end div woocommerce -->
 <?php 
 }

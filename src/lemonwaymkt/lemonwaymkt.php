@@ -3,7 +3,7 @@
  Plugin Name: Lemonway Marketplace (webkul)
  Plugin URI: http://www.sirateck.com
  Description: Secured payment solutions for Internet marketplaces, eCommerce, and crowdfunding. Payment API. BackOffice management. Compliance. Regulatory reporting.
- Version: 1.0.0
+ Version: 1.0.2
  Author: Kassim Belghait <kassim@sirateck.com>
  Author URI: http://www.sirateck.com
  License: GPL2
@@ -20,6 +20,12 @@ final class Lemonwaymkt {
 	protected static $_instance = null;
 	protected $name = "Secured payment solutions for Internet marketplaces with plugin WEBKUL Marketplace.";
 	protected $slug = 'lemonwaymkt';
+	
+	/**
+	 * Pointer to gateway making the request.
+	 * @var WC_Gateway_Lemonway
+	 */
+	protected $gateway;
      
 	const DB_VERSION = '1.0.0';
      
@@ -48,6 +54,8 @@ final class Lemonwaymkt {
      	
      	add_action( 'wp_ajax_marketplace_mp_make_payment',array($this,'marketplace_mp_make_payment'),10);
      	
+     	add_action( 'plugins_loaded', array( $this, 'init_gateway' ), 0 );
+     	
      	//seller approvement
      	//add_action( 'wp_ajax_nopriv_wk_admin_seller_approve',array($this,'wk_admin_seller_approve'),-10 );
      	//add_action( 'wp_ajax_wk_admin_seller_approve',array($this,'wk_admin_seller_approve'),-10);
@@ -61,6 +69,19 @@ final class Lemonwaymkt {
      	
      }
      
+     /**
+      * Init Gateway
+      */
+     public function init_gateway() {
+     	if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
+     		return;
+     	}
+     	 
+     	// Includes
+     	include_once( 'includes/class-wc-gateway-lemonway.php' );
+     	$this->gateway = new WC_Gateway_Lemonway();
+     }
+     
      public function marketplace_mp_make_payment(){
      	
      	global $wpdb;
@@ -72,21 +93,19 @@ final class Lemonwaymkt {
      		$pay = $remain;
      		$_POST['pay']  =$remain;
      	}
-     		
+     	
      	
      	$query = "select * from {$wpdb->prefix}mpcommision where seller_id=$id";
      	$seller_data = $wpdb->get_results($query);
-     	
-     	//$paid_ammount=$seller_data[0]->paid_amount+$pay;
-     	//$seller_total_ammount=$seller_data[0]->seller_total_ammount-$pay;
-     	//$last_paid_ammount=$pay;
-     	//$seller_money=$seller_data[0]->last_com_on_total-$seller_data[0]->admin_amount;
-     	//$remain_ammount=$seller_money-$paid_ammount;//seller total amount
+	
+     	//Send only commision seller percent to wallet SC 
+     	$comToSendToSC = ($seller_data[0]->commision_on_seller/100) * $pay;
+
      	$w = new WC_Lemonwaymkt_Wallet();
-     	$gateway = new WC_Gateway_Lemonway();
+     	
 
      	$params = array(
-     			"debitWallet"	=> $gateway->get_option(WC_Gateway_Lemonway::WALLET_MERCHANT_ID),
+     			"debitWallet"	=> $this->gateway->get_option('merchant_id'),
      			"creditWallet"	=> $w->getWalletByUser($id)->id_lw_wallet,
      			"amount"		=> number_format((float)$pay, 2, '.', ''),
      			"message"		=> sprintf(__('Send payment of %d for seller %s', LEMONWAYMKT_TEXT_DOMAIN),$pay,$id),
@@ -94,32 +113,35 @@ final class Lemonwaymkt {
      			"privateData"	=> "",
      	);
      	
-     	$kit = $gateway->getDirectkit();
+     	$kit = $this->gateway->getDirectkit();
      	
      
      	try {
-
+     		
      		//Send seller amount
      		$kit->SendPayment($params);
      		
-     		//Send marketplace commision
-     		
+     		//Send marketplace commision 		
      		$params = array(
-     				"debitWallet"	=> $gateway->get_option(WC_Gateway_Lemonway::WALLET_MERCHANT_ID),
+     				"debitWallet"	=> $this->gateway->get_option('merchant_id'),
      				"creditWallet"	=> "SC",
-     				"amount"		=> number_format((float)$seller_data[0]['admin_amount'], 2, '.', ''),
+     				"amount"		=> number_format((float)$comToSendToSC, 2, '.', ''),
      				"message"		=> __('Send payment commision', LEMONWAYMKT_TEXT_DOMAIN),
+     				"scheduledDate" => "",
+     				"privateData"	=> "",
      		);
+
      		
      		$kit->SendPayment($params);
+     		
      		
      		
      	} catch (DirectkitException $de) {
 
-     		throw $de;
+     		die($de->getMessage());
      		
      	} catch (Exception $e) {
-     		throw $e;
+     		die($e->getMessage());
      	}
      	
      }
@@ -172,8 +194,10 @@ final class Lemonwaymkt {
      		if(isset($_GET['action'])){
      			$action = $_GET['action'];
      		}
-     		
-     		$w = new WC_Lemonwaymkt_Wallet();
+
+     		//Wallet manager
+     		$wm = new WC_Lemonwaymkt_Wallet();
+
      		
      		if(($_GET['page']=="lemonway" ) && ($current_user->ID || $seller_id>0))
      		{
@@ -182,7 +206,7 @@ final class Lemonwaymkt {
      					
      					try{
      						
-     						$w->registerWallet($current_user,$seller_id);
+     						$wm->registerWallet($current_user,$seller_id);
      						wc_add_notice(__("Wallet created.", LEMONWAYMKT_TEXT_DOMAIN));
      					}
      					catch (Exception $e){
@@ -210,10 +234,9 @@ final class Lemonwaymkt {
      				else{
      					
      					$ibanManager = new WC_Lemonwaymkt_Iban();
-     					$_wallet = $w->getWalletByUser($current_user->ID);
 
      					try{
-     						
+     						$_wallet = $wm->getWalletByUser($current_user->ID);
      						$ibanManager->registerIban($data, $_wallet->id_lw_wallet);
      						wc_add_notice(__("Iban created.", LEMONWAYMKT_TEXT_DOMAIN));
      						wp_redirect(get_permalink().'?page=lemonway');
@@ -232,13 +255,205 @@ final class Lemonwaymkt {
      			include 'front/add_iban.php';
      			add_shortcode('marketplace','formIban');
      		}
+     		elseif(($_GET['page']=="lemonway-do-moneyout" ) && ($current_user->ID || $seller_id>0)){
+     			
+     			$_wallet = $wm->getWalletByUser($current_user->ID);
+     			
+     			include 'front/do_moneyout.php';
+     			add_shortcode('marketplace','formMoneyout');
+     		}
      	}
      }
+     
+     public function displayFormMoneyout($walletId){
+     
+     	try {
+     		/** @var $wallet Wallet **/
+     		$wallet = LW()->getWalletDetails($walletId);
+     	} catch (Exception $e) {
+     		echo $e->getMessage();
+     		return;
+     	}
+     		
+     	if(isset($_POST['amountToPay'])){
+     			
+     		$amountToPay = (float)str_replace(",", ".", $_POST['amountToPay']);
+     			
+     		if($amountToPay > $wallet->BAL){
+     			$message = sprintf(__("You can't paid amount upper of your balance amount: %s",LEMONWAY_TEXT_DOMAIN),wc_price($wallet->BAL));
+     			wc_add_notice($message,'error');
+     		}
+     		elseif($amountToPay <= 0){
+     			$message = __("Amount must be greater than 0",LEMONWAY_TEXT_DOMAIN);
+     			wc_add_notice($message,'error');
+     
+     		}
+     		else
+     		{
+     				
+     			$ibanId = 0;
+     				
+     			if(isset($_POST['iban_id']) && is_array($_POST['iban_id'])){
+     				$ibanId = current($_POST['iban_id']);
+     				$iban = $_POST['iban_' . $ibanId];
+     					
+     				try {
+     					$params = array(
+     							"wallet"=>$wallet->ID,
+     							"amountTot"=>sprintf("%.2f" ,$amountToPay),
+     							"amountCom"=>sprintf("%.2f" ,(float)0),
+     							"message"=>__("Moneyout from Wordpress module",LEMONWAY_TEXT_DOMAIN),
+     							"ibanId"=>$ibanId,
+     							"autoCommission" => 0,
+     					);
+     						
+     					$op = $this->gateway->getDirectkit()->MoneyOut($params);
+     						
+     					if($op->STATUS == "3"){
+     						
+     						//Record moneyout in DB
+     						$moneyoutManager = new WC_Lemonwaymkt_Moneyout();
+     						$data = array(
+     								'id_lw_wallet'=>$walletId,
+     								'id_customer'=>wp_get_current_user()->ID,
+     								'id_employee' =>0,
+     								'is_admin' =>0,
+     								'id_lw_iban' =>$ibanId,
+     								'prev_bal' =>$wallet->BAL,
+     								'new_bal' =>$wallet->BAL - $amountToPay,
+     								'iban' =>$iban,
+     								'amount_to_pay' =>$amountToPay,
+     								'date_add' =>date('Y-m-d H:i:s'),
+     								'date_upd' =>date('Y-m-d H:i:s'),
+     						);
+     						
+     						$moneyoutManager->save($data);
+     						
+     						$wallet->BAL = $wallet->BAL - $amountToPay;
+     						$message = sprintf(__("You paid %s to your Iban %s from your wallet <b>%s</b>",LEMONWAY_TEXT_DOMAIN),wc_price($amountToPay),$iban,$wallet->ID);
+     						wc_add_notice($message);
+     						 
+     					}
+     					else{
+     						$message = __("An error occurred. Please contact support.",LEMONWAY_TEXT_DOMAIN);
+     						wc_add_notice($message,'error');
+     							
+     					}
+     
+     				} catch (Exception $e) {
+     
+     					wc_add_notice($e->getMessage(),'error');
+     
+     				}
+     			}
+     			else{
+     				$message = __('Please select an IBAN at least',LEMONWAY_TEXT_DOMAIN) ;
+     				wc_add_notice($message,'error');
+     			}
+     		}
+     			
+     	}
+     	wc_print_notices();
+     
+     	?>
+      		          <form method="post" action="">	
+      		          	<div class="card wallet-info" >
+      		          		<h3><?php echo __('Wallet informations',LEMONWAY_TEXT_DOMAIN) ?></h3>
+      		          <table class="shop_table shop_table_responsive" >
+      		            <tr>
+      		                <td class=""><label ><?php echo __('Wallet ID',LEMONWAY_TEXT_DOMAIN)?></label></td>
+      		                <td class="">
+      		                    <strong><?php echo $wallet->ID ?></strong>
+      		                </td>
+      		            </tr>
+      		            <tr>
+      		                <td class=""><label ><?php echo __('Balance',LEMONWAY_TEXT_DOMAIN)?></label></td>
+      		                <td class="">
+      		                    <strong><?php echo wc_price($wallet->BAL)?></strong>
+      		                </td>
+      		            </tr>
+      		            <tr>
+      		                <td class=""><label ><?php echo __('Owner name',LEMONWAY_TEXT_DOMAIN)?></label></td>
+      		                <td class="">
+      		                    <strong><?php echo $wallet->NAME ?></strong>
+      		                </td>
+      		            </tr>
+      		            <tr>
+      		                <td class=""><label ><?php echo __('Owner email',LEMONWAY_TEXT_DOMAIN)?></label></td>
+      		                <td class="">
+      		                    <strong><?php echo $wallet->EMAIL ?></strong>
+      		                </td>
+      		            </tr>
+      		            <tr>
+      		                <td class=""><label ><?php echo __('Status',LEMONWAY_TEXT_DOMAIN)?></label></td>
+      		                <td class="">
+      		                    <strong><?php echo $wallet->getStatusLabel() ?></strong>
+      		                </td>
+      		            </tr>
+      		        </table>
+      		          	</div>
+      		          	<div class="card iban-info">
+      		          		<h3><?php echo __('Iban informations',LEMONWAY_TEXT_DOMAIN) ?></h3>
+      		          		<?php if(count($wallet->ibans)) :?>
+      				        <table class="shop_table shop_table_responsive" >
+      				        <tr><td colspan="2"><?php echo __('Select an Iban',LEMONWAY_TEXT_DOMAIN) ?></td></tr>
+      					        <?php foreach ($wallet->ibans as $_iban) : /** @var $_iban Iban */?>
+      					        <tr>
+      					        	<td>
+      					        		 <input type="hidden" value="<?php echo $_iban->IBAN ?>" name="iban_<?php echo $_iban->ID ?>" />
+      					        	</td>
+      					        	<td class="a-left">
+      						        	<label for="iban_<?php echo $_iban->ID ?>" >
+      						        	<input class="required-entry" id="iban_<?php echo $_iban->ID ?>" type="radio" name="iban_id[]" value="<?php echo $_iban->ID ?>" />
+      						        		<strong><?php echo $_iban->IBAN ?></strong>
+      					                    <br />
+      					                    <strong><?php echo $_iban->BIC ?></strong>
+      					                    <br />
+      					                  <!--   <?php //echo __('Status',LEMONWAY_TEXT_DOMAIN)?>&nbsp;<strong><?php // echo $_iban->STATUS ?></strong> -->
+      					                </label>
+      								</td>
+      					        </tr>
+      					        <?php endforeach; ?>
+      				        </table>
+      				        <?php else:?>
+      				        	<div class="box">
+      						    	<h4><?php echo __("You don't have any Iban!",LEMONWAY_TEXT_DOMAIN)?></h4> 
+      						    	<?php echo sprintf(__('Please create at least one for wallet <b>%s</b> in <a href="%s">Lemonway BO </a>.',LEMONWAY_TEXT_DOMAIN),$wallet->ID,"https://www.lemonway.fr/MbDev/bo") ?>
+      						    </div>
+      				        <?php endif; ?>
+      		          	</div>
+      		          	
+      		          	<?php if(count($wallet->ibans) && (float)$wallet->BAL > 0) :?>
+      		          	<div class="card moneyout-form" >
+      		          		<h3><?php echo __('Moneyout informations',LEMONWAY_TEXT_DOMAIN) ?></h3>
+      		          		
+      						    <table class="shop_table shop_table_responsive" >
+      						    	<tbody>
+      						    		<tr>
+      						    			<th scope="row"><?php echo __("Amount to pay",IZIFLUX_TEXT_DOMAIN)?></th>
+      							    		<td>
+      							    			<input type="text" id="amountToPay" class="input-text not-negative-amount"  name="amountToPay" value="<?php echo $wallet->BAL?>">
+      							    		</td>
+      							    	</tr>
+      						    	</tbody>
+      						    </table>
+      								<div class="buttons-set">
+								        	<a class="edit-link" href="<?php echo get_permalink().'?page=lemonway' ?>"><small>&laquo; </small><?php echo __('Back',LEMONWAYMKT_TEXT_DOMAIN) ?></a>
+								        	<button type="submit" class="button" title="<?php echo __('Do moneyout',LEMONWAYMKT_TEXT_DOMAIN) ?>"><span><span><?php echo __('Do moneyout',LEMONWAYMKT_TEXT_DOMAIN) ?></span></span></button>
+								    </div>
+      						   
+      		          	</div>
+      		          	<?php endif;?>
+      		          	</form>
+      		          	<?php 
+      	
+      	}
      
      public function includes(){
      	require_once(ABSPATH.'wp-content/plugins/lemonway/includes/services/DirectkitJson.php');
      	require_once('includes/class-wc-lemonwaymkt-wallet.php');
      	require_once('includes/class-wc-lemonwaymkt-iban.php');
+     	require_once('includes/class-wc-lemonwaymkt-moneyout.php');
      }
      
      public function filter_webkul_widget($widget_output, $widget_type, $widget_id, $sidebar_id){
@@ -251,7 +466,7 @@ final class Lemonwaymkt {
      	$seller_info=$wpdb->get_var("SELECT user_id FROM ".$wpdb->prefix."mpsellerinfo WHERE user_id = '".$user_id ."' and seller_value='1'");  	
      	$page_name = $wpdb->get_var("SELECT ID FROM $wpdb->posts WHERE post_title ='".get_option('wkmp_seller_login_page_tile')."'");
      	$html = '';
-     	if((int)$seller_info > O){     		
+     	if((int)$seller_info > 0){     		
      		$html = '<div class="wk_seller"><h2>'.__( "Lemonway Payment", LEMONWAYMKT_TEXT_DOMAIN ).'</h2><ul class="wk_sellermenu"><li class="selleritem"><a href="'.home_url("?page_id=".$page_name).'&page=lemonway">'.__( "Dashboard", LEMONWAYMKT_TEXT_DOMAIN ).'</a></li></ul></div>';
      	}
      	return $widget_output . $html;
@@ -336,7 +551,7 @@ final class Lemonwaymkt {
      	if( function_exists( 'is_plugin_active' ) ) {
      		
      		if ( !is_plugin_active( 'lemonway/lemonway.php' ) ) {
-     			add_action('admin_notices', array( &$this, 'alert_lw_not_active' ) );
+     			add_action('admin_notices', array( &$this, 'alert_lw_not_actvie' ) );
      			return false;
      		}
      	}
@@ -349,7 +564,7 @@ final class Lemonwaymkt {
       *
       * @access static
       */
-     static function alert_lw_not_active() {
+     static function alert_lw_not_actvie() {
      	echo '<div id="message" class="error"><p>';
      	echo sprintf( __('Sorry, <strong>%s</strong> requires Lemonway to be installed and activated first. Please install Lemonway plugin first.', LEMONWAYMKT_TEXT_DOMAIN), LEMONWAYMKT_NAME );
      	echo '</p></div>';
