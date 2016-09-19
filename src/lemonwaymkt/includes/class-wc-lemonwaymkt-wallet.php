@@ -115,7 +115,7 @@ class WC_Lemonwaymkt_Wallet {
 				//Wallet already exists on Lemonway but not in db
 				//So, we re-save the wallet
 				if((int)$de->getCode() == 152){ 
-					$wallet->save();
+					$this->save($wallet);
 				}
 				else{				
 					throw $de;
