@@ -120,7 +120,7 @@ final class Lemonwaymkt {
             $kit->SendPayment($params);
             
             //Send marketplace commision        
-            $params = array(
+            /*$params = array(
                     "debitWallet"   => $this->gateway->get_option('merchant_id'),
                     "creditWallet"  => "SC",
                     "amount"        => number_format((float)$comToSendToSC, 2, '.', ''),
@@ -129,7 +129,7 @@ final class Lemonwaymkt {
                     "privateData"   => "",
             );
 
-            $kit->SendPayment($params);
+            $kit->SendPayment($params);*/
         } catch (DirectkitException $de) {
             die($de->getMessage());
             
