@@ -1,7 +1,7 @@
 <?php
 /*
  Plugin Name: Lemonway Marketplace (webkul)
- Plugin URI: http://www.sirateck.com
+ Plugin URI: https://www.lemonway.com
  Description: Secured payment solutions for Internet marketplaces, eCommerce, and crowdfunding. Payment API. BackOffice management. Compliance. Regulatory reporting.
  Version: 1.0.2
  Author: Kassim Belghait <kassim@sirateck.com>
@@ -108,7 +108,7 @@ final class Lemonwaymkt {
                 "debitWallet"   => $this->gateway->get_option('merchant_id'),
                 "creditWallet"  => $w->getWalletByUser($id)->id_lw_wallet,
                 "amount"        => number_format((float)$pay, 2, '.', ''),
-                "message"       => sprintf(__('Send payment of %d for seller %s', LEMONWAYMKT_TEXT_DOMAIN),$pay,$id),
+                "message"       => get_bloginfo( 'name' ) . " - " . sprintf(__('Send payment of %d for seller %s', LEMONWAYMKT_TEXT_DOMAIN), $pay, $id),
                 "scheduledDate" => "",
                 "privateData"   => "",
         );
@@ -278,10 +278,10 @@ final class Lemonwaymkt {
             $amountToPay = (float)str_replace(",", ".", $_POST['amountToPay']);
                 
             if ($amountToPay > $wallet->BAL) {
-                $message = sprintf(__("You can't paid amount upper of your balance amount: %s",LEMONWAY_TEXT_DOMAIN),wc_price($wallet->BAL));
+                $message = sprintf(__("You can't paid amount upper of your balance amount: %s", LEMONWAY_TEXT_DOMAIN), wc_price($wallet->BAL));
                 wc_add_notice($message,'error');
             } elseif ($amountToPay <= 0) {
-                $message = __("Amount must be greater than 0",LEMONWAY_TEXT_DOMAIN);
+                $message = __("Amount must be greater than 0", LEMONWAY_TEXT_DOMAIN);
                 wc_add_notice($message,'error');
      
             } else {
@@ -293,11 +293,11 @@ final class Lemonwaymkt {
                         
                     try {
                         $params = array(
-                                "wallet"=>$wallet->ID,
-                                "amountTot"=>sprintf("%.2f" ,$amountToPay),
-                                "amountCom"=>sprintf("%.2f" ,(float)0),
-                                "message"=>__("Moneyout from Wordpress module",LEMONWAY_TEXT_DOMAIN),
-                                "ibanId"=>$ibanId,
+                                "wallet" => $wallet->ID,
+                                "amountTot" => sprintf("%.2f" ,$amountToPay),
+                                "amountCom" => sprintf("%.2f" ,(float)0),
+                                "message" => get_bloginfo( 'name' ) . " - " . __("Moneyout from Wordpress module", LEMONWAY_TEXT_DOMAIN),
+                                "ibanId" => $ibanId,
                                 "autoCommission" => 0,
                         );
                             
@@ -323,7 +323,7 @@ final class Lemonwaymkt {
                             $moneyoutManager->save($data);
                             
                             $wallet->BAL = $wallet->BAL - $amountToPay;
-                            $message = sprintf(__("You paid %s to your Iban %s from your wallet <b>%s</b>",LEMONWAY_TEXT_DOMAIN),wc_price($amountToPay),$iban,$wallet->ID);
+                            $message = sprintf(__("You paid %s to your Iban %s from your wallet <b>%s</b>", LEMONWAY_TEXT_DOMAIN), wc_price($amountToPay), $iban, $wallet->ID);
                             wc_add_notice($message);
                              
                         }
