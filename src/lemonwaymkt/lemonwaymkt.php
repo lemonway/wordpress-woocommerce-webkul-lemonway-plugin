@@ -3,17 +3,18 @@
  Plugin Name: Lemonway Marketplace (webkul)
  Plugin URI: https://www.lemonway.com
  Description: Secured payment solutions for Internet marketplaces, eCommerce, and crowdfunding. Payment API. BackOffice management. Compliance. Regulatory reporting.
- Version: 1.0.2
+ Version: 1.1.0
  Author: Kassim Belghait <kassim@sirateck.com>
  Author URI: http://www.sirateck.com
  License: GPL2
  */
 
-if(!defined('ABSPATH')) exit; // Exit if accessed directly
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly
+}
 
-final class Lemonwaymkt {
-    
-    
+final class Lemonwaymkt
+{
     /**
      * @var Lemonway The single instance of the class
      */
@@ -32,8 +33,8 @@ final class Lemonwaymkt {
      /**
       * Constructor
       */
-     public function __construct(){
-     
+     public function __construct()
+     {
         // Define constants
         $this->define_constants();
         
@@ -61,12 +62,9 @@ final class Lemonwaymkt {
         //add_action( 'wp_ajax_wk_admin_seller_approve',array($this,'wk_admin_seller_approve'),-10);
         // selller approvement end
         
-        
-        
         //add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
 
         $this->load_plugin_textdomain();
-        
      }
      
      /**

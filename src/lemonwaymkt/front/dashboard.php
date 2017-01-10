@@ -26,50 +26,50 @@ function dashboard()
     <div class="woocommerce">
     <?php wc_print_notices(); ?>
                     <div class="">
-                        <h3><?php echo __('Wallet Information',LEMONWAYMKT_TEXT_DOMAIN) ?></h3>
+                        <h3><?php echo __('Wallet Information', LEMONWAYMKT_TEXT_DOMAIN) ?></h3>
                     </div>
                     <div class="">
                         <?php if($hasWallet):?>
                              <table cellspacing="0" class="shop_table shop_table_responsive" >
                             <tr>
-                                <td ><label ><?php echo __('Wallet ID',LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
+                                <td ><label ><?php echo __('Wallet ID', LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
                                 <td >
                                     <strong><?php  echo $_wallet->id_lw_wallet ?></strong>
                                 </td>
                             </tr>
                             <tr>
-                                <td ><label ><?php echo __('Balance',LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
+                                <td ><label ><?php echo __('Balance', LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
                                 <td >
                                     <strong><?php echo wc_price($_walletDetails->BAL) ?></strong>
                                 </td>
                             </tr>
                             <tr>
-                                <td ><label ><?php echo __('Owner name',LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
+                                <td ><label ><?php echo __('Owner name', LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
                                 <td >
                                     <strong><?php echo $_walletDetails->NAME; ?></strong>
                                 </td>
                             </tr>
                             <tr>
-                                <td ><label ><?php echo __('Owner email',LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
+                                <td ><label ><?php echo __('Owner email', LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
                                 <td >
                                     <strong><?php echo $_walletDetails->EMAIL ?></strong>
                                 </td>
                             </tr>
                             <tr>
-                                <td ><label ><?php echo __('Status',LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
+                                <td ><label ><?php echo __('Status', LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
                                 <td >
                                     <strong><?php echo $_walletDetails->getStatusLabel() ?></strong>
                                 </td>
                             </tr>
                              <tr>
-                                <td ><label ><?php echo __('Documents',LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
+                                <td ><label ><?php echo __('Documents', LEMONWAYMKT_TEXT_DOMAIN)?></label></td>
                                 <td >
-                                   <?php echo sprintf(__('<strong>%d</strong> document(s) uploaded.',LEMONWAYMKT_TEXT_DOMAIN),count($_walletDetails->kycDocs)) ?><br /> 
+                                   <?php echo sprintf(__('<strong>%d</strong> document(s) uploaded.', LEMONWAYMKT_TEXT_DOMAIN),count($_walletDetails->kycDocs)) ?><br /> 
                                 </td>
                             </tr>
                         </table>
                         <?php else:?>
-                            <p><?php echo __("You don't have a wallet!",LEMONWAYMKT_TEXT_DOMAIN)?></p>
+                            <p><?php echo __("You don't have a wallet!", LEMONWAYMKT_TEXT_DOMAIN)?></p>
                             <a href="<?php echo add_query_arg( array(
                                                     'page' => 'lemonway',
                                                     'action' => 'createWallet'
@@ -90,10 +90,10 @@ function dashboard()
                                     <col  />
                                     <thead>
                                         <tr>
-                                            <th><?php echo __('Account number',LEMONWAYMKT_TEXT_DOMAIN)?></th>
-                                            <th><?php echo __('Bic',LEMONWAYMKT_TEXT_DOMAIN)?></th>
-                                            <th><?php echo __('Holder',LEMONWAYMKT_TEXT_DOMAIN)?></th>
-                                            <th><?php echo __('Status',LEMONWAYMKT_TEXT_DOMAIN)?></th>
+                                            <th><?php echo __('Account number', LEMONWAYMKT_TEXT_DOMAIN)?></th>
+                                            <th><?php echo __('Bic', LEMONWAYMKT_TEXT_DOMAIN)?></th>
+                                            <th><?php echo __('Holder', LEMONWAYMKT_TEXT_DOMAIN)?></th>
+                                            <th><?php echo __('Status', LEMONWAYMKT_TEXT_DOMAIN)?></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -109,11 +109,11 @@ function dashboard()
                                     </tbody>
                                 </table>
                             <?php else:?>
-                                <p><?php echo __("You don't have any Iban!",LEMONWAYMKT_TEXT_DOMAIN)?></p>
+                                <p><?php echo __("You don't have any Iban!", LEMONWAYMKT_TEXT_DOMAIN)?></p>
                             <?php endif;?>
                             <a href="<?php echo add_query_arg( array(
                                 'page' => 'lemonway-add-iban'
-                                ), get_permalink() ); ?>"><?php echo __('Add an Iban',LEMONWAYMKT_TEXT_DOMAIN) ?></a>
+                                ), get_permalink() ); ?>"><?php echo __('Add an Iban', LEMONWAYMKT_TEXT_DOMAIN) ?></a>
                         </div>
                     </div>
                 <?php endif;?>
@@ -124,13 +124,13 @@ function dashboard()
                             <h2><?php echo __('Money out',LEMONWAYMKT_TEXT_DOMAIN) ?></h2>
                         </div>
                         <?php if(is_array($moneyouts) && count($moneyouts)):?>
-                            <p style="margin: 10px;font-size:18px"><?php echo __('Your ten last money out',LEMONWAYMKT_TEXT_DOMAIN)?></p>
+                            <p style="margin: 10px;font-size:18px"><?php echo __('Your ten last money out', LEMONWAYMKT_TEXT_DOMAIN)?></p>
                             <table cellspacing="0" class="shop_table shop_table_responsive" id="moneyout_table">
                                 <thead>
                                     <tr>
-                                        <th><?php echo __('Amount',LEMONWAYMKT_TEXT_DOMAIN)?></th>
-                                        <th><?php echo __('New balance',LEMONWAYMKT_TEXT_DOMAIN)?></th>
-                                        <th><?php echo __('Date',LEMONWAYMKT_TEXT_DOMAIN)?></th>
+                                        <th><?php echo __('Amount', LEMONWAYMKT_TEXT_DOMAIN)?></th>
+                                        <th><?php echo __('New balance', LEMONWAYMKT_TEXT_DOMAIN)?></th>
+                                        <th><?php echo __('Date', LEMONWAYMKT_TEXT_DOMAIN)?></th>
                                     </tr>
                                 </thead>
                                 <tbody>
