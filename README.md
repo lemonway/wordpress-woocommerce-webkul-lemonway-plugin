@@ -1,4 +1,4 @@
-# Lemonway Wordpress/Woocommerce Webkul Adapter (Work in progress...)
+# Lemonway Wordpress/Woocommerce Webkul Adapter
 ---
 ## How to use this repository
 
