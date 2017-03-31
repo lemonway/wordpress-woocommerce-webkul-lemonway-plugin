@@ -12,7 +12,7 @@ function dashboard()
     $walletManager = new WC_Lemonwaymkt_Wallet();
     $moneyoutManager = new WC_Lemonwaymkt_Moneyout();
 
-    $current_user=wp_get_current_user();
+    $current_user = wp_get_current_user();
     $_wallet = $walletManager->getWalletByUser($current_user->ID);
     $moneyouts = array();
     if ($_wallet) {

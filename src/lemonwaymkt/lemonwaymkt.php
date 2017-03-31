@@ -3,7 +3,7 @@
  Plugin Name: Lemonway Marketplace (webkul)
  Plugin URI: https://www.lemonway.com
  Description: Secured payment solutions for Internet marketplaces, eCommerce, and crowdfunding. Payment API. BackOffice management. Compliance. Regulatory reporting.
- Version: 1.1.0
+ Version: 1.1.1
  Author: Kassim Belghait <kassim@sirateck.com>
  Author URI: http://www.sirateck.com
  License: GPL2
@@ -48,7 +48,14 @@ final class Lemonwaymkt
         //fitler widget webkul to add lemonway link
         add_filter('widget_output', array($this,'filter_webkul_widget'), 10, 4);
         
-        add_action( 'init', array( $this, 'calling_pages' ),100 );
+        // For Webkul compatibility
+        if (get_option('wkmp_seller_login_page_tile')) {
+            // v2.0
+            add_action( 'init', array( $this, 'calling_pages' ),100 );
+        } else {
+            // v2.3
+            add_action( 'wp', array( $this, 'calling_pages' ),100 );
+        }
         
         //When role is changed to wk_marketplace_seller
         add_action( 'set_user_role', array( $this, 'role_changed' ),999 ,3);
@@ -75,7 +82,7 @@ final class Lemonwaymkt
         if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
             return;
         }
-         
+        
         // Includes
         include_once( 'includes/class-wc-gateway-lemonway.php' );
         $this->gateway = new WC_Gateway_Lemonway();
@@ -181,6 +188,7 @@ final class Lemonwaymkt
         
         $current_user = wp_get_current_user();
         $seller_id = $wpdb->get_var("SELECT seller_id FROM " . $wpdb->prefix . "mpsellerinfo WHERE user_id = '" . $current_user->ID . "'");
+
         if (isset($_GET['page'])) {
             $action = "";
             if (isset($_GET['action'])) {
@@ -190,8 +198,7 @@ final class Lemonwaymkt
             //Wallet manager
             $wm = new WC_Lemonwaymkt_Wallet();
 
-            
-            if (($_GET['page']=="lemonway" ) && ($current_user->ID || $seller_id>0)) {
+            if (($_GET['page']=="lemonway" ) && ($current_user->ID || $seller_id > 0)) {
                 switch($action) {
                     case "createWallet":
                         try{
@@ -444,21 +451,36 @@ final class Lemonwaymkt
         require_once('includes/class-wc-lemonwaymkt-moneyout.php');
      }
      
-     public function filter_webkul_widget($widget_output, $widget_type, $widget_id, $sidebar_id){
+     public function filter_webkul_widget($widget_output, $widget_type, $widget_id, $sidebar_id) {
         global $wpdb;
+
         if($widget_type != 'mp_marketplace-widget'){
             return $widget_output;
         }
 
+        // For Webkul compatibility
+        if (get_option('wkmp_seller_login_page_tile')) {
+            // v2.0
+            $page_title = get_option('wkmp_seller_login_page_tile');
+            $seller_value = '1';
+            $col = "ID";
+            $param = "page_id";
+        } else {
+            // v2.3
+            $page_title = get_option('wkmp_seller_page_title');
+            $seller_value = 'seller';
+            $col = "post_name";
+            $param = "pagename";
+        }
+
         $user_id = get_current_user_id();
-        $seller_info=$wpdb->get_var("SELECT user_id FROM ".$wpdb->prefix."mpsellerinfo WHERE user_id = '".$user_id ."' and seller_value='1'");      
-        $page_name = $wpdb->get_var("SELECT ID FROM $wpdb->posts WHERE post_title ='".get_option('wkmp_seller_login_page_tile')."'");
+        $seller_info = $wpdb->get_var("SELECT user_id FROM ".$wpdb->prefix."mpsellerinfo WHERE user_id = '".$user_id ."' and seller_value='" . $seller_value . "'");
+        $page_name = $wpdb->get_var("SELECT " . $col ." FROM $wpdb->posts WHERE post_title = '" . $page_title . "'");
         $html = '';
-        if((int)$seller_info > 0){          
-            $html = '<div class="wk_seller"><h2>'.__( "Lemonway Payment", LEMONWAYMKT_TEXT_DOMAIN ).'</h2><ul class="wk_sellermenu"><li class="selleritem"><a href="'.home_url("?page_id=".$page_name).'&page=lemonway">'.__( "Dashboard", LEMONWAYMKT_TEXT_DOMAIN ).'</a></li></ul></div>';
+        if ((int)$seller_info > 0) {          
+            $html = '<div class="wk_seller"><h2>'.__( "Lemonway Payment", LEMONWAYMKT_TEXT_DOMAIN ).'</h2><ul class="wk_sellermenu"><li class="selleritem"><a href="'.home_url("?" . $param . "=" . $page_name) . '&page=lemonway">' . __( "Dashboard", LEMONWAYMKT_TEXT_DOMAIN ) . '</a></li></ul></div>';
         }
         return $widget_output . $html;
-        
      }
    
      
