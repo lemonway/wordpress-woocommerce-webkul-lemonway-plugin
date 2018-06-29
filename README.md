@@ -1,5 +1,6 @@
-# Lemonway Wordpress/Woocommerce Webkul Adapter
+# Lemonway Wordpress/Woocommerce Webkul Adapter (Abandoned)
 ---
+# _This project has been abandoned._
 ## How to use this repository
 
 ### Get and change sources
