@@ -1,3 +1,5 @@
+⚠️WARNING: This client is deprecated⚠️ 
+
 # Lemonway Wordpress/Woocommerce Webkul Adapter (Abandoned)
 ---
 # _This project has been abandoned._
